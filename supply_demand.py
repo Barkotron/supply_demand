@@ -30,10 +30,9 @@ reddit = praw.Reddit(client_id=REDDIT_CLIENT_ID,
 # In[3]:
 
 
-target_sub = ''
-n_posts = 100
-
-home, *subreddits = reddit.subreddits.popular(limit=n_subreddits)
+target_sub_string = 'winnipeg'
+target_sub = reddit.subreddit(target_sub_string)
+n_posts = 10
 
 
 # Get `limit` most recent comments from each subreddit
@@ -52,3 +51,4 @@ def get_flattened_comment_tree(subreddit, limit):
     return [author.name for author in author_generator]
 
 
+print(get_flattened_comment_tree(target_sub,n_posts))
