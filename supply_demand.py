@@ -2,8 +2,8 @@
 # coding: utf-8
 
 # In[1]:
-
-
+import nltk
+import re
 import praw
 import networkx as nx
 import numpy as np
@@ -14,6 +14,7 @@ from dotenv import load_dotenv
 
 
 # In[2]:
+nltk.download()
 load_dotenv()
 REDDIT_CLIENT_ID = os.getenv('REDDIT_CLIENT_ID')
 REDDIT_SECRET = os.getenv('REDDIT_SECRET')
@@ -32,7 +33,7 @@ reddit = praw.Reddit(client_id=REDDIT_CLIENT_ID,
 
 target_sub_string = 'winnipeg'
 target_sub = reddit.subreddit(target_sub_string)
-n_posts = 10
+n_posts = 100
 
 
 # Get `limit` most recent comments from each subreddit
@@ -45,11 +46,16 @@ n_posts = 10
 def get_flattened_comment_tree(subreddit, limit):
     
     print(f"Reading from {subreddit}")
-    comments = subreddit.comments(limit=limit)
+    return subreddit.comments(limit=limit)
     
 
 def check_for_keywords(comment,keywords):
-    pass
+
+    comment_string = comment.body
+    for word in keywords:
+        if comment_string.find(word) > -1:
+            print(f"Comment:\n{comment_string}\n Contains keyword: {word} ")
+
 
 def leave_comment(comment,image_path):
     pass
@@ -58,7 +64,11 @@ def check_subreddit(subreddit,keywords,image_path):
     # for each comment:
     # check keywords
     # leave comment
-    pass
+    
+    comments = get_flattened_comment_tree(target_sub,n_posts)
+    for comment in comments:
+        check_for_keywords(comment,keywords)
 
+keywords = ["condos","condo","home","price","prices"]
 
-print(get_flattened_comment_tree(target_sub,n_posts))
+check_subreddit(target_sub,keywords,"hello")
