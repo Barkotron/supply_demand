@@ -47,8 +47,18 @@ def get_flattened_comment_tree(subreddit, limit):
     print(f"Reading from {subreddit}")
     comments = subreddit.comments(limit=limit)
     
-    author_generator = filter(None, (comment.author for comment in comments))
-    return [author.name for author in author_generator]
+
+def check_for_keywords(comment,keywords):
+    pass
+
+def leave_comment(comment,image_path):
+    pass
+
+def check_subreddit(subreddit,keywords,image_path):
+    # for each comment:
+    # check keywords
+    # leave comment
+    pass
 
 
 print(get_flattened_comment_tree(target_sub,n_posts))
