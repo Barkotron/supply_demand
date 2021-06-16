@@ -3,6 +3,7 @@
 
 # In[1]:
 import nltk
+from nltk.corpus import stopwords
 import re
 import praw
 import networkx as nx
@@ -14,7 +15,7 @@ from dotenv import load_dotenv
 
 
 # In[2]:
-nltk.download()
+#nltk.download()
 load_dotenv()
 REDDIT_CLIENT_ID = os.getenv('REDDIT_CLIENT_ID')
 REDDIT_SECRET = os.getenv('REDDIT_SECRET')
@@ -33,7 +34,7 @@ reddit = praw.Reddit(client_id=REDDIT_CLIENT_ID,
 
 target_sub_string = 'winnipeg'
 target_sub = reddit.subreddit(target_sub_string)
-n_posts = 100
+n_posts = 10
 
 
 # Get `limit` most recent comments from each subreddit
@@ -50,11 +51,22 @@ def get_flattened_comment_tree(subreddit, limit):
     
 
 def check_for_keywords(comment,keywords):
+    stop_words = set(stopwords.words("english"))
+
+    lemmatizer = nltk.WordNetLemmatizer()
 
     comment_string = comment.body
-    for word in keywords:
-        if comment_string.find(word) > -1:
-            print(f"Comment:\n{comment_string}\n Contains keyword: {word} ")
+    tokens = nltk.word_tokenize(comment_string)
+
+    filtered_list = []
+
+    for word in tokens:
+        if word.casefold() not in stop_words:
+            filtered_list.append(word)
+
+    lemmatized_words = [lemmatizer.lemmatize(word) for word in filtered_list]
+    
+    print(lemmatized_words)
 
 
 def leave_comment(comment,image_path):
