@@ -4,6 +4,7 @@
 # In[1]:
 import nltk
 from nltk.corpus import stopwords
+from nltk.sentiment import SentimentIntensityAnalyzer
 import re
 import praw
 import networkx as nx
@@ -66,7 +67,11 @@ def check_for_keywords(comment,keywords):
 
     lemmatized_words = [lemmatizer.lemmatize(word) for word in filtered_list]
     
-    print(lemmatized_words)
+    sia = SentimentIntensityAnalyzer()
+    print(f"COMMENT:\n{comment_string}")
+    print(sia.polarity_scores(comment_string))
+    
+    #print(lemmatized_words)
 
 
 def leave_comment(comment,image_path):
