@@ -54,7 +54,7 @@ def get_flattened_comment_tree(subreddit, limit):
     return subreddit.comments(limit=limit)
     
 
-def check_for_keywords(comment,collocs):
+def check_for_collocations(comment,collocs):
     stop_words = set(stopwords.words("english"))
 
     lemmatizer = nltk.WordNetLemmatizer()
@@ -102,19 +102,21 @@ def check_for_keywords(comment,collocs):
     
 
 
-def leave_comment(comment,image_path):
+def post_comment(comment,image_path):
     print(f"commented on:\n{comment.body}")
+    comment.reply("COMMENT")
 
 
 def check_subreddit(subreddit,keywords,n_posts,image_path):
     # for each comment:
     # check keywords
+    # check that it hasn't already commented here
     # leave comment
     
     comments = get_flattened_comment_tree(subreddit,n_posts)
     for comment in comments:
-        if check_for_keywords(comment,keywords):
-            leave_comment(comment,image_path)
+        if check_for_collocations(comment,keywords):
+            post_comment(comment,image_path)
 
 
 #print(collocs)
