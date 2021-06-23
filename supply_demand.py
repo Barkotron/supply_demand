@@ -79,11 +79,24 @@ def check_for_collocations(comment,collocs):
 
 def check_already_posted(comment):
     
-    comment.refresh()
+    comment.refresh() #replies seem to be empty without this
+
+    #check that we haven't spammed this comment thread already
+    submission = comment.submission
+    top_level_comments = submission.comments
     replies = comment.replies
     #print(comment.author)
     #print(replies)
+
+    #check replies to THIS comment
     for reply in replies:
+        print(reply.author)
+        if reply.author == REDDIT_USER:
+            print(f"already commented on:\n{comment.body}")
+            return True
+
+    #check top level comments of the whole submission
+    for reply in top_level_comments:
         print(reply.author)
         if reply.author == REDDIT_USER:
             print(f"already commented on:\n{comment.body}")
@@ -143,7 +156,7 @@ def main():
 
     
     dwellings = ["house", "condo", "airbnb","home","apartment"]
-    pricing = ["cheap", "luxury", "affordable", "expensive","price","pricing"]
+    pricing = ["cheap", "luxury", "affordable", "expensive","price","pricing","pricey"]
 
     collocs = set( list(itertools.product(dwellings, pricing)) + list(itertools.product(pricing,dwellings)) )
 
