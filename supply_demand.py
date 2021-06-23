@@ -3,6 +3,7 @@
 
 # In[1]:
 import nltk
+import argparse
 from nltk.corpus import stopwords
 from nltk.sentiment import SentimentIntensityAnalyzer
 from nltk.collocations import BigramCollocationFinder
@@ -37,7 +38,7 @@ reddit = praw.Reddit(client_id=REDDIT_CLIENT_ID,
 
 target_sub_string = 'toronto'
 target_sub = reddit.subreddit(target_sub_string)
-n_posts = 10000
+n_posts = 100000
 
 
 # Get `limit` most recent comments from each subreddit
@@ -87,45 +88,82 @@ def check_for_keywords(comment,collocs):
         bigram_collocation = BigramCollocationFinder.from_words(lemmatized_words)
         n_best = bigram_collocation.nbest(BigramAssocMeasures.raw_freq, 15)
         
-        sia = SentimentIntensityAnalyzer()
+        #sia = SentimentIntensityAnalyzer()
 
 
-        if set(collocs).intersection(set(n_best)):
+        
         #if True:
-            print(f"-------------\nCOMMENT:\n{comment_string}")
-            print(f"lemmatized words:\n{lemmatized_words}")
-            print(f"collocations:\n{n_best}")
-            print(sia.polarity_scores(comment_string))
+            #print(f"-------------\nCOMMENT:\n{comment_string}")
+            #print(f"lemmatized words:\n{lemmatized_words}")
+            #print(f"collocations:\n{n_best}")
+            #print(sia.polarity_scores(comment_string))
 
+        return bool(collocs.intersection(set(n_best)))
     
 
 
 def leave_comment(comment,image_path):
-    pass
+    print(f"commented on:\n{comment.body}")
 
-def test(comment,collocs):
-    check_for_keywords(comment,collocs)
 
-def check_subreddit(subreddit,keywords,image_path):
+def check_subreddit(subreddit,keywords,n_posts,image_path):
     # for each comment:
     # check keywords
     # leave comment
     
-    comments = get_flattened_comment_tree(target_sub,n_posts)
+    comments = get_flattened_comment_tree(subreddit,n_posts)
     for comment in comments:
-        check_for_keywords(comment,keywords)
+        if check_for_keywords(comment,keywords):
+            leave_comment(comment,image_path)
 
 
-test_comment_string = """I'm looking at buying a place but condo prices are so bad.
-where do i find a condo for a good price"""
+#print(collocs)
+#for i in collocs:
+    #print(i)
 
-test_comment = reddit.comment(test_comment_string)
-test_comment.body = test_comment_string
 
-#print(test_comment.body)
 
-collocs = [("condo","price"),("price","condo"),("house","price"),("price","house"),("home","price"),("price","home"),
-("affordable","housing"), ("housing","affordable")]
 
-check_subreddit(target_sub,collocs,"hello")
-#test(test_comment,collocs)
+
+def arguments():
+    arg_parser  = argparse.ArgumentParser(description="Educational trolling tool for reddit.")
+
+    arg_parser.add_argument(
+        "subreddit",
+        type=str,
+        help="the subreddit to look through"
+    )
+
+    arg_parser.add_argument(
+        "-i",
+        "--image_path",
+        type=str,
+        help="the image to post"
+    )
+
+    arg_parser.add_argument(
+        "-n",
+        "--n_posts",
+        default=1000,
+        type=int,
+        help="the number of posts to check"
+    )
+
+
+    return arg_parser.parse_args()
+
+def main():
+
+    args = arguments()
+
+    
+    dwellings = ["house", "condo", "airbnb","home","apartment"]
+    pricing = ["cheap", "luxury", "affordable", "expensive","price","pricing"]
+
+    collocs = set( list(itertools.product(dwellings, pricing)) + list(itertools.product(pricing,dwellings)) )
+
+    #print(collocs)
+    check_subreddit(reddit.subreddit(args.subreddit),collocs,args.n_posts,args.image_path)
+
+if __name__ == "__main__":
+    main()
