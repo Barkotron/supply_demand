@@ -1,25 +1,16 @@
-#!/usr/bin/env python
-# coding: utf-8
 
-# In[1]:
 import nltk
 import argparse
 from nltk.corpus import stopwords
 from nltk.sentiment import SentimentIntensityAnalyzer
 from nltk.collocations import BigramCollocationFinder
 from nltk.metrics import BigramAssocMeasures
-import re
 import praw
-import networkx as nx
-import numpy as np
 import itertools
-import matplotlib.pyplot as plt
 import os
 from dotenv import load_dotenv
 
 
-# In[2]:
-#nltk.download()
 load_dotenv()
 REDDIT_CLIENT_ID = os.getenv('REDDIT_CLIENT_ID')
 REDDIT_SECRET = os.getenv('REDDIT_SECRET')
@@ -31,21 +22,6 @@ reddit = praw.Reddit(client_id=REDDIT_CLIENT_ID,
                      user_agent="A bot - Reminds people of Supply Vs. Demand",
                      username=REDDIT_USER,
                      password=REDDIT_PASS)
-
-
-# In[3]:
-
-
-target_sub_string = 'toronto'
-target_sub = reddit.subreddit(target_sub_string)
-n_posts = 100000
-
-
-# Get `limit` most recent comments from each subreddit
-# 
-# Comments what were deleted for removed with have `NoneType` so we filter those out before asking for the author name.
-
-# In[4]:
 
 
 def get_flattened_comment_tree(subreddit, limit):
@@ -101,13 +77,26 @@ def check_for_collocations(comment,collocs):
         return bool(collocs.intersection(set(n_best)))
     
 
+def check_already_posted(comment):
+    
+    comment.refresh()
+    replies = comment.replies
+    #print(comment.author)
+    #print(replies)
+    for reply in replies:
+        print(reply.author)
+        if reply.author == REDDIT_USER:
+            print(f"already commented on:\n{comment.body}")
+            return True
+    
+    return False
 
-def post_comment(comment,image_path):
+def post_comment(comment,link):
     print(f"commented on:\n{comment.body}")
-    comment.reply("COMMENT")
+    comment.reply(f"This may help: {link}")
 
 
-def check_subreddit(subreddit,keywords,n_posts,image_path):
+def check_subreddit(subreddit,keywords,n_posts,link):
     # for each comment:
     # check keywords
     # check that it hasn't already commented here
@@ -116,15 +105,8 @@ def check_subreddit(subreddit,keywords,n_posts,image_path):
     comments = get_flattened_comment_tree(subreddit,n_posts)
     for comment in comments:
         if check_for_collocations(comment,keywords):
-            post_comment(comment,image_path)
-
-
-#print(collocs)
-#for i in collocs:
-    #print(i)
-
-
-
+            if not check_already_posted(comment):
+                post_comment(comment,link)
 
 
 def arguments():
@@ -137,10 +119,11 @@ def arguments():
     )
 
     arg_parser.add_argument(
-        "-i",
-        "--image_path",
+        "-l",
+        "--link",
         type=str,
-        help="the image to post"
+        default="https://en.wikipedia.org/wiki/Supply_and_demand",
+        help="educational link about supply and demand"
     )
 
     arg_parser.add_argument(
@@ -165,7 +148,7 @@ def main():
     collocs = set( list(itertools.product(dwellings, pricing)) + list(itertools.product(pricing,dwellings)) )
 
     #print(collocs)
-    check_subreddit(reddit.subreddit(args.subreddit),collocs,args.n_posts,args.image_path)
+    check_subreddit(reddit.subreddit(args.subreddit),collocs,args.n_posts,args.link)
 
 if __name__ == "__main__":
     main()
