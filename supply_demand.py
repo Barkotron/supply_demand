@@ -23,6 +23,7 @@ reddit = praw.Reddit(client_id=REDDIT_CLIENT_ID,
                      username=REDDIT_USER,
                      password=REDDIT_PASS)
 
+    
 
 def get_flattened_comment_tree(subreddit, limit):
     
@@ -158,6 +159,7 @@ def main():
     dwellings = ["house", "condo", "airbnb","home","apartment"]
     pricing = ["cheap", "luxury", "affordable", "expensive","price","pricing","pricey"]
 
+    # to cover sentences like 'affordable housing' as well as 'houses that are affordable'
     collocs = set( list(itertools.product(dwellings, pricing)) + list(itertools.product(pricing,dwellings)) )
 
     #print(collocs)
