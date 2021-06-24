@@ -56,38 +56,25 @@ def check_for_collocations(comment,collocs):
             if word.casefold() not in stop_words and word.casefold().isalpha():
                 filtered_list.append(word.lower())
 
-
-        #tokens = nltk.pos_tag(filtered_list)
         lemmatized_words = [lemmatizer.lemmatize(word) for word in filtered_list]
-        #lemma_text = nltk.Text(comment_string)
 
-        
+        #get most frequent collocations
         bigram_collocation = BigramCollocationFinder.from_words(lemmatized_words)
         n_best = bigram_collocation.nbest(BigramAssocMeasures.raw_freq, 15)
-        
-        #sia = SentimentIntensityAnalyzer()
-
 
         
-        #if True:
-            #print(f"-------------\nCOMMENT:\n{comment_string}")
-            #print(f"lemmatized words:\n{lemmatized_words}")
-            #print(f"collocations:\n{n_best}")
-            #print(sia.polarity_scores(comment_string))
-
         return bool(collocs.intersection(set(n_best)))
     
 
 def check_already_posted(comment):
     
-    comment.refresh() #replies seem to be empty without this
+    #replies seem to be empty without this
+    comment.refresh()
 
     #check that we haven't spammed this comment thread already
     submission = comment.submission
     top_level_comments = submission.comments
     replies = comment.replies
-    #print(comment.author)
-    #print(replies)
 
     #check replies to THIS comment
     for reply in replies:
@@ -114,7 +101,7 @@ def check_subreddit(subreddit,keywords,n_posts,link):
     # for each comment:
     # check keywords
     # check that it hasn't already commented here
-    # leave comment
+    # if not: leave comment
     
     comments = get_flattened_comment_tree(subreddit,n_posts)
     for comment in comments:
@@ -124,6 +111,7 @@ def check_subreddit(subreddit,keywords,n_posts,link):
 
 
 def arguments():
+    
     arg_parser  = argparse.ArgumentParser(description="Educational trolling tool for reddit.")
 
     arg_parser.add_argument(
@@ -154,15 +142,13 @@ def arguments():
 def main():
 
     args = arguments()
-
-    
+  
     dwellings = ["house", "condo", "airbnb","home","apartment"]
     pricing = ["cheap", "luxury", "affordable", "expensive","price","pricing","pricey"]
 
     # to cover sentences like 'affordable housing' as well as 'houses that are affordable'
     collocs = set( list(itertools.product(dwellings, pricing)) + list(itertools.product(pricing,dwellings)) )
 
-    #print(collocs)
     check_subreddit(reddit.subreddit(args.subreddit),collocs,args.n_posts,args.link)
 
 if __name__ == "__main__":
