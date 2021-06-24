@@ -94,7 +94,7 @@ def check_already_posted(comment):
 
 def post_comment(comment,link):
     print(f"commented on:\n{comment.body}")
-    comment.reply(f"This may help: {link}")
+    #comment.reply(f"This may help: {link}")
 
 
 def check_subreddit(subreddit,keywords,n_posts,link):
@@ -111,7 +111,7 @@ def check_subreddit(subreddit,keywords,n_posts,link):
 
 
 def arguments():
-    
+
     arg_parser  = argparse.ArgumentParser(description="Educational trolling tool for reddit.")
 
     arg_parser.add_argument(
