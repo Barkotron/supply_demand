@@ -30,13 +30,22 @@ def get_flattened_comment_tree(subreddit, limit):
     print(f"Reading from {subreddit}")
     return subreddit.comments(limit=limit)
     
+def get_submissions(subreddit,limit):
+    
+    print(f"Reading from {subreddit}")
+    return subreddit.top(limit=limit)
 
-def check_for_collocations(comment,collocs):
+def get_all_comments(submission):
+
+    submission.comments.replace_more(limit=None)
+    return submission.comments.list()
+
+def check_for_collocations(comment_string,collocs):
     stop_words = set(stopwords.words("english"))
 
     lemmatizer = nltk.WordNetLemmatizer()
 
-    comment_string = comment.body
+    #comment_string = comment.body
 
     if comment_string:
         all_tokens = []
@@ -66,35 +75,28 @@ def check_for_collocations(comment,collocs):
         return bool(collocs.intersection(set(n_best)))
     
 
-def check_already_posted(comment):
+def already_posted(post):
     
-    #replies seem to be empty without this
-    comment.refresh()
 
-    #check that we haven't spammed this comment thread already
-    submission = comment.submission
-    top_level_comments = submission.comments
-    replies = comment.replies
+    if type(post) is praw.models.reddit.comment.Comment:
+        all_comments = get_all_comments(post.submission)
+    elif type(post) is praw.models.reddit.submission.Submission:
+        all_comments = get_all_comments(post)
 
-    #check replies to THIS comment
-    for reply in replies:
-        print(reply.author)
-        if reply.author == REDDIT_USER:
-            print(f"already commented on:\n{comment.body}")
-            return True
-
-    #check top level comments of the whole submission
-    for reply in top_level_comments:
-        print(reply.author)
-        if reply.author == REDDIT_USER:
-            print(f"already commented on:\n{comment.body}")
-            return True
-    
+    for c in all_comments:
+            if c.author == REDDIT_USER:
+                return True
     return False
 
-def post_comment(comment,link):
-    print(f"commented on:\n{comment.body}")
-    #comment.reply(f"This may help: {link}")
+
+
+def post_comment(post,link):
+
+    if type(post) is praw.models.reddit.comment.Comment:
+        print(f"commented on:\n{post.body}")
+        #comment.reply(f"This may help: {link}")
+    elif type(post) is praw.models.reddit.submission.Submission:
+        print(f"commented on (submission):\n{post.selftext}")
 
 
 def check_subreddit(subreddit,keywords,n_posts,link):
@@ -103,15 +105,29 @@ def check_subreddit(subreddit,keywords,n_posts,link):
     # check that it hasn't already commented here
     # if not: leave comment
     
-    comments = get_flattened_comment_tree(subreddit,n_posts)
-    for comment in comments:
-        if check_for_collocations(comment,keywords):
-            if not check_already_posted(comment):
-                post_comment(comment,link)
+    #comments = get_flattened_comment_tree(subreddit,n_posts)
+
+    submissions = get_submissions(subreddit,n_posts)
+    for i,submission in enumerate(submissions):
+        
+        #if i % 25 == 0:
+        print(f"Checking post #{i}\t({submission.num_comments} comments)")
+        posted = already_posted(submission)
+        #if submission isn't just a picture and it mentions relevant keywords
+        if not posted:
+            if check_for_collocations(submission.title,keywords) or check_for_collocations(submission.selftext,keywords):
+                post_comment(submission,link)
+            
+            comments = get_all_comments(submission)
+            for comment in comments:
+                #print(type(comment))
+                if check_for_collocations(comment.body,keywords):
+                    post_comment(comment,link)
+                
 
 
 def arguments():
-
+    
     arg_parser  = argparse.ArgumentParser(description="Educational trolling tool for reddit.")
 
     arg_parser.add_argument(
