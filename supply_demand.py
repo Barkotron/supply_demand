@@ -33,7 +33,7 @@ def get_flattened_comment_tree(subreddit, limit):
 def get_submissions(subreddit,limit):
     
     print(f"Reading from {subreddit}")
-    return subreddit.top(limit=limit)
+    return subreddit.hot(limit=limit)
 
 def get_all_comments(submission):
 
