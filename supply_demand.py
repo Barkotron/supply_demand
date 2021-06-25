@@ -85,6 +85,7 @@ def already_posted(post):
 
     for c in all_comments:
             if c.author == REDDIT_USER:
+                print("already commented on this thread")
                 return True
     return False
 
@@ -92,28 +93,31 @@ def already_posted(post):
 
 def post_comment(post,link):
 
+    reply = f"""Hello {post.author}, here is an article about [Supply and Demand]({link}) which may help clear things up.
+    
+*Note: This is a bot that has detected a discussion on home pricing and intends only to educate.*"""
+
+
     if type(post) is praw.models.reddit.comment.Comment:
         print(f"commented on:\n{post.body}")
-        #comment.reply(f"This may help: {link}")
+        post.reply(reply)
     elif type(post) is praw.models.reddit.submission.Submission:
         print(f"commented on (submission):\n{post.selftext}")
+        post.reply(reply)
 
 
 def check_subreddit(subreddit,keywords,n_posts,link):
-    # for each comment:
-    # check keywords
-    # check that it hasn't already commented here
-    # if not: leave comment
-    
-    #comments = get_flattened_comment_tree(subreddit,n_posts)
+    # for each submission:
+    # check that we haven't commented here already
+    # check if relevant keywords appear
+    # leave comment with link to S&D article
 
     submissions = get_submissions(subreddit,n_posts)
     for i,submission in enumerate(submissions):
         
-        #if i % 25 == 0:
         print(f"Checking post #{i}\t({submission.num_comments} comments)")
         posted = already_posted(submission)
-        #if submission isn't just a picture and it mentions relevant keywords
+
         if not posted:
             if check_for_collocations(submission.title,keywords) or check_for_collocations(submission.selftext,keywords):
                 post_comment(submission,link)
@@ -141,6 +145,7 @@ def arguments():
         "--link",
         type=str,
         default="https://en.wikipedia.org/wiki/Supply_and_demand",
+        metavar="link",
         help="educational link about supply and demand"
     )
 
@@ -149,6 +154,7 @@ def arguments():
         "--n_posts",
         default=1000,
         type=int,
+        metavar="n posts",
         help="the number of posts to check"
     )
 
