@@ -9,6 +9,7 @@ import praw
 import itertools
 import os
 from dotenv import load_dotenv
+import sqlite3
 
 
 load_dotenv()
@@ -75,38 +76,47 @@ def check_for_collocations(comment_string,collocs):
         return bool(collocs.intersection(set(n_best)))
     
 
-def already_posted(post):
+def already_posted(post,dbCursor):
     
 
-    if type(post) is praw.models.reddit.comment.Comment:
-        all_comments = get_all_comments(post.submission)
-    elif type(post) is praw.models.reddit.submission.Submission:
-        all_comments = get_all_comments(post)
+    dbCursor.execute("SELECT ID FROM Submissions WHERE ID = (?)",(post.id,))
 
-    for c in all_comments:
-            if c.author == REDDIT_USER:
-                print("already commented on this thread")
-                return True
-    return False
+    if len(dbCursor.fetchall()) > 0:
+        print(f"Already commented on submission: {post.id}")
+        return True
+    else:
+        #print("found nothing")
+        return False
 
 
-
-def post_comment(post,link):
+def post_comment(post,link,dbCursor):
 
     reply = f"""Hello {post.author}, here is an article about [Supply and Demand]({link}) which may help clear things up.
     
 *Note: This is a bot that has detected a discussion on home pricing and intends only to educate.*"""
 
+    id = None
+    title = None
 
     if type(post) is praw.models.reddit.comment.Comment:
         print(f"commented on:\n{post.body}")
+        id = post.submission.id
+        title = post.submission.title
         post.reply(reply)
     elif type(post) is praw.models.reddit.submission.Submission:
         print(f"commented on (submission):\n{post.selftext}")
+        id = post.id
+        title = post.title
         post.reply(reply)
+    
+    try:
+        dbCursor.execute("INSERT INTO Submissions VALUES (?,?)",(id,title))
+        dbCursor.connection.commit()
+    except:
+        print("Insert failed")
 
 
-def check_subreddit(subreddit,keywords,n_posts,link):
+def check_subreddit(subreddit,keywords,n_posts,link,dbCursor):
     # for each submission:
     # check that we haven't commented here already
     # check if relevant keywords appear
@@ -116,17 +126,17 @@ def check_subreddit(subreddit,keywords,n_posts,link):
     for i,submission in enumerate(submissions):
         
         print(f"Checking post #{i}\t({submission.num_comments} comments)")
-        posted = already_posted(submission)
+        posted = already_posted(submission,dbCursor)
 
         if not posted:
             if check_for_collocations(submission.title,keywords) or check_for_collocations(submission.selftext,keywords):
-                post_comment(submission,link)
+                post_comment(submission,link,dbCursor)
             
             comments = get_all_comments(submission)
             for comment in comments:
                 #print(type(comment))
                 if check_for_collocations(comment.body,keywords):
-                    post_comment(comment,link)
+                    post_comment(comment,link,dbCursor)
                 
 
 
@@ -163,6 +173,11 @@ def arguments():
 
 def main():
 
+    dbConnection = sqlite3.connect("redditcommentdb.db")
+    dbCursor = dbConnection.cursor()
+    
+
+
     args = arguments()
   
     dwellings = ["house", "condo", "airbnb","home","apartment"]
@@ -171,7 +186,7 @@ def main():
     # to cover sentences like 'affordable housing' as well as 'houses that are affordable'
     collocs = set( list(itertools.product(dwellings, pricing)) + list(itertools.product(pricing,dwellings)) )
 
-    check_subreddit(reddit.subreddit(args.subreddit),collocs,args.n_posts,args.link)
+    check_subreddit(reddit.subreddit(args.subreddit),collocs,args.n_posts,args.link,dbCursor)
 
 if __name__ == "__main__":
     main()
