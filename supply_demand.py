@@ -109,11 +109,12 @@ def post_comment(post,link,dbCursor):
         title = post.title
         post.reply(reply)
     
-    try:
-        dbCursor.execute("INSERT INTO Submissions VALUES (?,?)",(id,title))
-        dbCursor.connection.commit()
-    except:
-        print("Insert failed")
+    if not already_posted(post,dbCursor):
+        try:
+            dbCursor.execute("INSERT INTO Submissions VALUES (?,?)",(id,title))
+            dbCursor.connection.commit()
+        except:
+            print("Insert failed")
 
 
 def check_subreddit(subreddit,keywords,n_posts,link,dbCursor):
